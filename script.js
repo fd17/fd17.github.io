@@ -79,6 +79,7 @@ function formatDateTime(timestamp) {
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
+    hour12: false,
   }).format(new Date(timestamp));
 }
 
@@ -190,6 +191,7 @@ function formatChartLabel(timestamp) {
   return new Intl.DateTimeFormat(undefined, {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   }).format(new Date(timestamp));
 }
 
