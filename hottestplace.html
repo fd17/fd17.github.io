@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Hottest Place</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+    <link rel="stylesheet" href="styles.css?v=20260626">
+  </head>
+  <body>
+    <main class="temp-warm hottest-place">
+      <p class="eyebrow" id="station">Station --</p>
+      <h1 id="page-title">Hottest place right now</h1>
+
+      <fieldset class="mode-toggle" aria-label="Temperature mode">
+        <label>
+          <input type="radio" name="temperature-mode" value="TL" checked>
+          <span>Now</span>
+        </label>
+        <label>
+          <input type="radio" name="temperature-mode" value="TLMAX">
+          <span>Today</span>
+        </label>
+      </fieldset>
+
+      <div class="reading" aria-live="polite">
+        <span id="value">--</span>
+        <span id="unit">°C</span>
+      </div>
+
+      <dl>
+        <dt>Time</dt>
+        <dd id="measured">--</dd>
+        <dt>Coordinates</dt>
+        <dd id="coordinates">--</dd>
+      </dl>
+
+      <div id="map" aria-label="Hottest station location map"></div>
+
+      <button id="refresh" type="button">Refresh</button>
+      <p id="status">Loading hottest place...</p>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script_hottestplace.js?v=20260626-2"></script>
+  </body>
+</html>

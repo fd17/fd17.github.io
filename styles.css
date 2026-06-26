@@ -63,6 +63,101 @@ main.temp-warm {
   --accent-strong: #b91c1c;
 }
 
+main.hottest-place {
+  width: min(100%, 820px);
+}
+
+main.hottest-place #map {
+  height: min(52vh, 440px);
+  min-height: 300px;
+}
+
+main.hottest-place .reading {
+  margin-top: 24px;
+}
+
+main.hottest-place #value,
+main.hottest-place #unit,
+.hot-popup-temp {
+  color: #dc2626;
+}
+
+.mode-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(88px, 1fr));
+  gap: 4px;
+  margin: 22px 0 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.mode-toggle label {
+  cursor: pointer;
+}
+
+.mode-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mode-toggle span {
+  display: grid;
+  min-height: 36px;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--muted);
+  font-weight: 700;
+  padding: 0 14px;
+}
+
+.mode-toggle input:checked + span {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.mode-toggle input:focus-visible + span {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.mode-toggle input:disabled + span {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.hot-marker {
+  position: relative;
+}
+
+.hot-marker::before {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #ffffff;
+  border-radius: 50% 50% 50% 0;
+  background: #dc2626;
+  box-shadow: 0 8px 18px rgba(127, 29, 29, 0.35);
+  content: "";
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.hot-marker::after {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
 .eyebrow {
   margin: 0 0 10px;
   color: var(--accent);
