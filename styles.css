@@ -8,6 +8,8 @@
   --accent: #006d77;
   --accent-strong: #004f57;
   --danger: #ad343e;
+  --temp: #6b7280;
+  --temp-soft: rgba(107, 114, 128, 0.12);
 }
 
 * {
@@ -21,7 +23,7 @@ body {
   place-items: center;
   padding: 24px;
   background:
-    linear-gradient(135deg, rgba(0, 109, 119, 0.12), transparent 42%),
+    linear-gradient(135deg, rgba(107, 114, 128, 0.1), transparent 42%),
     linear-gradient(315deg, rgba(233, 196, 106, 0.18), transparent 38%),
     var(--bg);
   color: var(--ink);
@@ -35,8 +37,24 @@ main {
   padding: 32px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.92);
+  background:
+    linear-gradient(180deg, var(--temp-soft), transparent 190px),
+    rgba(255, 255, 255, 0.94);
   box-shadow: 0 18px 50px rgba(23, 33, 29, 0.12);
+}
+
+main.temp-cold {
+  --temp: #2563eb;
+  --temp-soft: rgba(37, 99, 235, 0.15);
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+}
+
+main.temp-warm {
+  --temp: #dc2626;
+  --temp-soft: rgba(220, 38, 38, 0.14);
+  --accent: #dc2626;
+  --accent-strong: #b91c1c;
 }
 
 .eyebrow {
@@ -62,13 +80,15 @@ h1 {
 }
 
 #value {
+  color: var(--temp);
   font-size: clamp(4rem, 20vw, 6.8rem);
   font-weight: 800;
   line-height: 0.9;
+  text-shadow: 0 10px 32px var(--temp-soft);
 }
 
 #unit {
-  color: var(--muted);
+  color: var(--temp);
   font-size: clamp(1.5rem, 8vw, 2.6rem);
   font-weight: 700;
 }

@@ -13,6 +13,7 @@ const stationEl = document.querySelector("#station");
 const chartEl = document.querySelector("#temperature-chart");
 const chartTitleEl = document.querySelector("#chart-title");
 const rangeSelectEl = document.querySelector("#range-select");
+const dashboardEl = document.querySelector("main");
 const stationMap = L.map("map", {
   zoomControl: true,
 }).setView([47.26, 11.384166666666665], 12);
@@ -30,6 +31,7 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
 
 function buildApiUrl() {
   const end = toMinutePrecision(new Date());
+  //const end = new Date("2026-06-25T00:00:00Z");
   const start = new Date(end);
   start.setUTCHours(start.getUTCHours() - getSelectedRangeHours());
 
@@ -192,6 +194,102 @@ function formatChartLabel(timestamp) {
   }).format(new Date(timestamp));
 }
 
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function mixColor(start, end, amount) {
+  const startRgb = start.match(/\w\w/g).map((channel) => parseInt(channel, 16));
+  const endRgb = end.match(/\w\w/g).map((channel) => parseInt(channel, 16));
+
+  return startRgb
+    .map((channel, index) =>
+      Math.round(channel + (endRgb[index] - channel) * amount)
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("");
+}
+
+function hexToRgba(hex, opacity) {
+  const [red, green, blue] = hex.match(/\w\w/g).map((channel) => parseInt(channel, 16));
+  return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+}
+
+function getTemperatureColor(value) {
+  if (value < 15) {
+    const intensity = clamp((15 - value) / 10, 0, 1);
+    return `#${mixColor("9ca3af", "1d4ed8", intensity)}`;
+  }
+
+  if (value > 25) {
+    const intensity = clamp((value - 25) / 5, 0, 1);
+    return `#${mixColor("9ca3af", "b91c1c", intensity)}`;
+  }
+
+  return "#9ca3af";
+}
+
+function updateTemperatureTheme(value) {
+  dashboardEl.classList.toggle("temp-cold", value < 15);
+  dashboardEl.classList.toggle("temp-warm", value > 25);
+}
+
+function getTemperatureGradient(chart, opacity) {
+  const { chartArea, scales } = chart;
+
+  if (!chartArea || !scales.y) {
+    return hexToRgba("9ca3af", opacity);
+  }
+
+  const gradient = chart.ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+  const yScale = scales.y;
+  const stops = [
+    { offset: 0, color: hexToRgba("b91c1c", opacity) },
+    {
+      offset: clamp(
+        (yScale.getPixelForValue(30) - chartArea.top) /
+          (chartArea.bottom - chartArea.top),
+        0,
+        1,
+      ),
+      color: hexToRgba("b91c1c", opacity),
+    },
+    {
+      offset: clamp(
+        (yScale.getPixelForValue(25) - chartArea.top) /
+          (chartArea.bottom - chartArea.top),
+        0,
+        1,
+      ),
+      color: hexToRgba("9ca3af", opacity),
+    },
+    {
+      offset: clamp(
+        (yScale.getPixelForValue(15) - chartArea.top) /
+          (chartArea.bottom - chartArea.top),
+        0,
+        1,
+      ),
+      color: hexToRgba("9ca3af", opacity),
+    },
+    {
+      offset: clamp(
+        (yScale.getPixelForValue(10) - chartArea.top) /
+          (chartArea.bottom - chartArea.top),
+        0,
+        1,
+      ),
+      color: hexToRgba("1d4ed8", opacity),
+    },
+    { offset: 1, color: hexToRgba("1d4ed8", opacity) },
+  ].sort((a, b) => a.offset - b.offset);
+
+  stops.forEach((stop) => gradient.addColorStop(stop.offset, stop.color));
+
+  return gradient;
+}
+
 function updateChart(series) {
   if (series.length === 0) {
     throw new Error("No temperature values were found for the chart.");
@@ -205,13 +303,20 @@ function updateChart(series) {
       {
         label: "Temperature °C",
         data: series.map((point) => point.value),
-        borderColor: "#006d77",
-        backgroundColor: "rgba(0, 109, 119, 0.14)",
-        borderWidth: 2,
+        borderColor: (context) => getTemperatureGradient(context.chart, 1),
+        backgroundColor: "transparent",
+        borderWidth: 3,
+        pointBackgroundColor: (context) => getTemperatureColor(context.parsed?.y ?? 22),
+        pointBorderColor: "#ffffff",
+        pointBorderWidth: 2,
         pointRadius: 0,
-        pointHoverRadius: 4,
+        pointHoverRadius: 5,
         tension: 0.28,
-        fill: true,
+        fill: false,
+        segment: {
+          borderColor: (context) =>
+            getTemperatureColor((context.p0.parsed.y + context.p1.parsed.y) / 2),
+        },
       },
     ],
   };
@@ -257,6 +362,8 @@ function updateChart(series) {
           },
         },
         y: {
+          suggestedMin: 15,
+          suggestedMax: 30,
           title: {
             display: true,
             text: "°C",
@@ -304,6 +411,7 @@ async function loadLatestValue() {
 
     valueEl.textContent = latest.value.toFixed(1);
     unitEl.textContent = latest.unit;
+    updateTemperatureTheme(latest.value);
     measuredEl.textContent = latest.timestamp
       ? formatDateTime(latest.timestamp)
       : "--";
