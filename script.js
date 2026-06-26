@@ -5,7 +5,6 @@ const stationId =
 const valueEl = document.querySelector("#value");
 const unitEl = document.querySelector("#unit");
 const measuredEl = document.querySelector("#measured");
-const parameterEl = document.querySelector("#parameter");
 const coordinatesEl = document.querySelector("#coordinates");
 const statusEl = document.querySelector("#status");
 const refreshButton = document.querySelector("#refresh");
@@ -394,8 +393,6 @@ function updateMap(coordinates) {
   } else {
     stationMarker = L.marker(position).addTo(stationMap);
   }
-
-  //stationMarker.bindPopup(`Station ${stationId}`).openPopup();
 }
 
 async function loadLatestValue() {
@@ -415,7 +412,6 @@ async function loadLatestValue() {
     measuredEl.textContent = latest.timestamp
       ? formatDateTime(latest.timestamp)
       : "--";
-    parameterEl.textContent = latest.name;
     updateMap(latest.coordinates);
     updateChart(series);
     chartTitleEl.textContent = formatRangeLabel(getSelectedRangeHours());

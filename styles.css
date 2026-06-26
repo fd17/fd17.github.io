@@ -16,12 +16,17 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   min-height: 100vh;
   margin: 0;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: clamp(12px, 5vw, 24px);
   background:
     linear-gradient(135deg, rgba(107, 114, 128, 0.1), transparent 42%),
     linear-gradient(315deg, rgba(233, 196, 106, 0.18), transparent 38%),
@@ -34,6 +39,7 @@ body {
 
 main {
   width: min(100%, 720px);
+  min-width: 0;
   padding: 32px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -110,10 +116,12 @@ dt {
 dd {
   margin: 0;
   text-align: right;
+  overflow-wrap: anywhere;
 }
 
 #map {
   width: 100%;
+  max-width: 100%;
   height: 240px;
   margin-top: 24px;
   border: 1px solid var(--line);
@@ -121,8 +129,14 @@ dd {
   overflow: hidden;
 }
 
+#map .leaflet-control-attribution {
+  max-width: 100%;
+  white-space: normal;
+}
+
 .chart-section {
   margin-top: 28px;
+  min-width: 0;
 }
 
 .chart-header {
@@ -160,10 +174,16 @@ dd {
 
 .chart-wrap {
   height: 320px;
+  min-width: 0;
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
+}
+
+.chart-wrap canvas {
+  display: block;
+  max-width: 100%;
 }
 
 button {
@@ -193,6 +213,7 @@ button:disabled {
   margin: 18px 0 0;
   color: var(--muted);
   font-size: 0.95rem;
+  overflow-wrap: anywhere;
 }
 
 #status.error {
@@ -201,7 +222,7 @@ button:disabled {
 
 @media (max-width: 420px) {
   main {
-    padding: 24px;
+    padding: 20px;
   }
 
   dl {

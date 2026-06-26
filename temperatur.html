@@ -23,13 +23,11 @@
       <dl>
         <dt>Time</dt>
         <dd id="measured">--</dd>
-        <dt>Parameter</dt>
-        <dd id="parameter">Lufttemperatur</dd>
         <dt>Coordinates</dt>
         <dd id="coordinates">--</dd>
       </dl>
 
-      <div id="map" aria-label="Station location map"></div>
+      <!--<div id="map" aria-label="Station location map"></div>-->
       <section class="chart-section" aria-label="Temperature curve">
         <div class="chart-header">
           <h2 id="chart-title">Past 24 hours</h2>
@@ -50,6 +48,7 @@
           <canvas id="temperature-chart"></canvas>
         </div>
       </section>
+      <div id="map" aria-label="Station location map"></div>
 
       <button id="refresh" type="button">Refresh</button>
       <p id="status">Loading latest value...</p>
