@@ -6,20 +6,45 @@ const valueEl = document.querySelector("#value");
 const unitEl = document.querySelector("#unit");
 const measuredEl = document.querySelector("#measured");
 const coordinatesEl = document.querySelector("#coordinates");
+const precipitationEl = document.querySelector("#precipitation");
+const windEl = document.querySelector("#wind");
+const windDirectionEl = document.querySelector("#wind-direction");
 const statusEl = document.querySelector("#status");
 const refreshButton = document.querySelector("#refresh");
 const stationEl = document.querySelector("#station");
 const chartEl = document.querySelector("#temperature-chart");
 const chartTitleEl = document.querySelector("#chart-title");
 const rangeSelectEl = document.querySelector("#range-select");
+const metricSelectEl = document.querySelector("#metric-select");
 const dashboardEl = document.querySelector("main");
 const stationMap = L.map("map", {
   zoomControl: true,
 }).setView([47.26, 11.384166666666665], 12);
 const apiResponseCache = new Map();
+const compassPoints = [
+  "N",
+  "NNE",
+  "NE",
+  "ENE",
+  "E",
+  "ESE",
+  "SE",
+  "SSE",
+  "S",
+  "SSW",
+  "SW",
+  "WSW",
+  "W",
+  "WNW",
+  "NW",
+  "NNW",
+];
 let stationMarker;
-let temperatureChart;
+let weatherChart;
 let chartSeries = [];
+let chartMetric = "temperature";
+let temperatureSeries = [];
+let precipitationSeries = [];
 
 stationEl.textContent = `Station ${stationId}`;
 
@@ -39,7 +64,7 @@ function buildApiUrl() {
   );
 
   apiUrl.search = new URLSearchParams({
-    parameters: "TL",
+    parameters: "TL,RR,FF,DD",
     start: start.toISOString(),
     end: end.toISOString(),
     station_ids: stationId,
@@ -59,6 +84,10 @@ function getSelectedRangeHours() {
   return Number.isFinite(hours) ? hours : 24;
 }
 
+function getSelectedMetric() {
+  return metricSelectEl?.value === "precipitation" ? "precipitation" : "temperature";
+}
+
 function formatRangeLabel(hours) {
   if (hours === 1) {
     return "Past hour";
@@ -73,6 +102,11 @@ function formatRangeLabel(hours) {
   }
 
   return `Past ${hours / 24} days`;
+}
+
+function formatChartTitle() {
+  const metricLabel = getSelectedMetric() === "precipitation" ? "Precipitation" : "Temperature";
+  return `${metricLabel} · ${formatRangeLabel(getSelectedRangeHours())}`;
 }
 
 function formatDateTime(timestamp) {
@@ -148,36 +182,116 @@ async function fetchTawesPayload(apiUrl) {
   };
 }
 
-function getLatestReading(payload) {
+function isMeasuredValue(value) {
+  return value !== null && value !== undefined && Number.isFinite(value);
+}
+
+function getLatestParameterReading(payload, parameterKey) {
   const timestamps = payload.timestamps ?? [];
   const feature = payload.features?.[0];
-  const parameter = feature?.properties?.parameters?.TL;
+  const parameter = feature?.properties?.parameters?.[parameterKey];
   const values = parameter?.data ?? [];
 
   for (let index = values.length - 1; index >= 0; index -= 1) {
     const value = values[index];
 
-    if (value !== null && value !== undefined && Number.isFinite(value)) {
+    if (isMeasuredValue(value)) {
       return {
         value,
         timestamp: timestamps[index],
-        name: parameter.name ?? "Air temperature",
-        unit: parameter.unit ?? "°C",
+        name: parameter.name ?? parameterKey,
+        unit: parameter.unit ?? "",
         coordinates: feature?.geometry?.coordinates,
       };
     }
   }
 
-  throw new Error("No measured temperature value was found.");
+  return null;
 }
 
-function isMeasuredValue(value) {
-  return value !== null && value !== undefined && Number.isFinite(value);
+function getLatestReading(payload) {
+  const reading = getLatestParameterReading(payload, "TL");
+
+  if (!reading) {
+    throw new Error("No measured temperature value was found.");
+  }
+
+  return {
+    ...reading,
+    name: reading.name || "Air temperature",
+    unit: reading.unit || "°C",
+  };
 }
 
-function getTemperatureSeries(payload) {
+function getLatestWind(payload) {
   const timestamps = payload.timestamps ?? [];
-  const values = payload.features?.[0]?.properties?.parameters?.TL?.data ?? [];
+  const feature = payload.features?.[0];
+  const speedParameter = feature?.properties?.parameters?.FF;
+  const directionParameter = feature?.properties?.parameters?.DD;
+  const speedValues = speedParameter?.data ?? [];
+  const directionValues = directionParameter?.data ?? [];
+  const lastIndex = Math.max(speedValues.length, directionValues.length) - 1;
+
+  for (let index = lastIndex; index >= 0; index -= 1) {
+    const speed = speedValues[index];
+
+    if (!isMeasuredValue(speed)) {
+      continue;
+    }
+
+    return {
+      speed,
+      direction: isMeasuredValue(directionValues[index]) ? directionValues[index] : null,
+      timestamp: timestamps[index],
+      speedUnit: speedParameter?.unit ?? "m/s",
+      directionUnit: directionParameter?.unit ?? "°",
+    };
+  }
+
+  return null;
+}
+
+function degreesToCompass(degrees) {
+  const normalized = ((degrees % 360) + 360) % 360;
+  const index = Math.round(normalized / 22.5) % compassPoints.length;
+  return compassPoints[index];
+}
+
+function formatPrecipitation(reading) {
+  if (!reading) {
+    return "--";
+  }
+
+  return `${reading.value.toFixed(1)} ${reading.unit || "mm"}`;
+}
+
+function formatWindSpeed(wind) {
+  if (!wind) {
+    return "--";
+  }
+
+  return `${wind.speed.toFixed(1)} ${wind.speedUnit}`;
+}
+
+function formatWindDirection(wind) {
+  if (!wind) {
+    return "Speed and direction";
+  }
+
+  if (wind.speed < 0.1) {
+    return "Calm";
+  }
+
+  if (!isMeasuredValue(wind.direction)) {
+    return "Direction unavailable";
+  }
+
+  return `${degreesToCompass(wind.direction)} (${Math.round(wind.direction)}°)`;
+}
+
+function getParameterSeries(payload, parameterKey) {
+  const timestamps = payload.timestamps ?? [];
+  const values = payload.features?.[0]?.properties?.parameters?.[parameterKey]?.data ?? [];
 
   return values
     .map((value, index) => ({
@@ -291,14 +405,35 @@ function getTemperatureGradient(chart, opacity) {
   return gradient;
 }
 
-function updateChart(series) {
-  if (series.length === 0) {
-    throw new Error("No temperature values were found for the chart.");
+function getSelectedSeries() {
+  return getSelectedMetric() === "precipitation" ? precipitationSeries : temperatureSeries;
+}
+
+function buildChartData(series, metric) {
+  if (metric === "precipitation") {
+    return {
+      labels: series.map((point) => formatChartLabel(point.timestamp)),
+      datasets: [
+        {
+          label: "Precipitation mm",
+          data: series.map((point) => point.value),
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37, 99, 235, 0.18)",
+          borderWidth: 2,
+          pointBackgroundColor: "#2563eb",
+          pointBorderColor: "#ffffff",
+          pointBorderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          tension: 0.2,
+          fill: true,
+          segment: undefined,
+        },
+      ],
+    };
   }
 
-  chartSeries = series;
-
-  const chartData = {
+  return {
     labels: series.map((point) => formatChartLabel(point.timestamp)),
     datasets: [
       {
@@ -321,14 +456,79 @@ function updateChart(series) {
       },
     ],
   };
+}
 
-  if (temperatureChart) {
-    temperatureChart.data = chartData;
-    temperatureChart.update();
+function getChartScaleOptions(series, metric) {
+  if (metric === "precipitation") {
+    const maxValue = Math.max(0, ...series.map((point) => point.value));
+
+    return {
+      beginAtZero: true,
+      suggestedMin: 0,
+      suggestedMax: Math.max(1, maxValue),
+      title: {
+        display: true,
+        text: "mm / 10 min",
+      },
+      ticks: {
+        callback: (value) => `${value}`,
+      },
+    };
+  }
+
+  return {
+    beginAtZero: false,
+    suggestedMin: 15,
+    suggestedMax: 30,
+    title: {
+      display: true,
+      text: "°C",
+    },
+    ticks: {
+      callback: (value) => `${value}°`,
+    },
+  };
+}
+
+function formatChartTooltip(item) {
+  if (getSelectedMetric() === "precipitation") {
+    return `${item.parsed.y.toFixed(1)} mm`;
+  }
+
+  return `${item.parsed.y.toFixed(1)} °C`;
+}
+
+function updateChart(series) {
+  const metric = getSelectedMetric();
+  const metricLabel = metric === "precipitation" ? "precipitation" : "temperature";
+
+  if (series.length === 0) {
+    throw new Error(`No ${metricLabel} values were found for the chart.`);
+  }
+
+  chartSeries = series;
+  const chartData = buildChartData(series, metric);
+  const yScale = getChartScaleOptions(series, metric);
+
+  if (weatherChart && chartMetric !== metric) {
+    weatherChart.destroy();
+    weatherChart = undefined;
+  }
+
+  chartMetric = metric;
+
+  if (weatherChart) {
+    weatherChart.data = chartData;
+    weatherChart.options.scales.y.beginAtZero = yScale.beginAtZero;
+    weatherChart.options.scales.y.suggestedMin = yScale.suggestedMin;
+    weatherChart.options.scales.y.suggestedMax = yScale.suggestedMax;
+    weatherChart.options.scales.y.title.text = yScale.title.text;
+    weatherChart.options.scales.y.ticks.callback = yScale.ticks.callback;
+    weatherChart.update();
     return;
   }
 
-  temperatureChart = new Chart(chartEl, {
+  weatherChart = new Chart(chartEl, {
     type: "line",
     data: chartData,
     options: {
@@ -348,7 +548,7 @@ function updateChart(series) {
               const point = chartSeries[items[0].dataIndex];
               return formatDateTime(point.timestamp);
             },
-            label: (item) => `${item.parsed.y.toFixed(1)} °C`,
+            label: (item) => formatChartTooltip(item),
           },
         },
       },
@@ -362,20 +562,15 @@ function updateChart(series) {
             display: false,
           },
         },
-        y: {
-          suggestedMin: 15,
-          suggestedMax: 30,
-          title: {
-            display: true,
-            text: "°C",
-          },
-          ticks: {
-            callback: (value) => `${value}°`,
-          },
-        },
+        y: yScale,
       },
     },
   });
+}
+
+function renderSelectedChart() {
+  updateChart(getSelectedSeries());
+  chartTitleEl.textContent = formatChartTitle();
 }
 
 function updateMap(coordinates) {
@@ -397,26 +592,38 @@ function updateMap(coordinates) {
   }
 }
 
+function setControlsDisabled(disabled) {
+  refreshButton.disabled = disabled;
+  rangeSelectEl.disabled = disabled;
+  if (metricSelectEl) {
+    metricSelectEl.disabled = disabled;
+  }
+}
+
 async function loadLatestValue() {
-  refreshButton.disabled = true;
-  rangeSelectEl.disabled = true;
+  setControlsDisabled(true);
   statusEl.classList.remove("error");
   statusEl.textContent = "Loading latest value...";
 
   try {
     const { payload, fromCache } = await fetchTawesPayload(buildApiUrl());
     const latest = getLatestReading(payload);
-    const series = getTemperatureSeries(payload);
+    const precipitation = getLatestParameterReading(payload, "RR");
+    const wind = getLatestWind(payload);
+    temperatureSeries = getParameterSeries(payload, "TL");
+    precipitationSeries = getParameterSeries(payload, "RR");
 
     valueEl.textContent = latest.value.toFixed(1);
     unitEl.textContent = latest.unit;
     updateTemperatureTheme(latest.value);
+    precipitationEl.textContent = formatPrecipitation(precipitation);
+    windEl.textContent = formatWindSpeed(wind);
+    windDirectionEl.textContent = formatWindDirection(wind);
     measuredEl.textContent = latest.timestamp
       ? formatDateTime(latest.timestamp)
       : "--";
     updateMap(latest.coordinates);
-    updateChart(series);
-    chartTitleEl.textContent = formatRangeLabel(getSelectedRangeHours());
+    renderSelectedChart();
     statusEl.textContent = fromCache
       ? `Loaded from cache ${formatDateTime(new Date())}`
       : `Updated ${formatDateTime(new Date())}`;
@@ -424,11 +631,22 @@ async function loadLatestValue() {
     statusEl.classList.add("error");
     statusEl.textContent = error.message;
   } finally {
-    refreshButton.disabled = false;
-    rangeSelectEl.disabled = false;
+    setControlsDisabled(false);
+  }
+}
+
+function showSelectedMetric() {
+  statusEl.classList.remove("error");
+
+  try {
+    renderSelectedChart();
+  } catch (error) {
+    statusEl.classList.add("error");
+    statusEl.textContent = error.message;
   }
 }
 
 refreshButton.addEventListener("click", loadLatestValue);
 rangeSelectEl.addEventListener("change", loadLatestValue);
+metricSelectEl.addEventListener("change", showSelectedMetric);
 loadLatestValue();

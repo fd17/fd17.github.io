@@ -234,12 +234,62 @@ dd {
   min-width: 0;
 }
 
+.conditions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conditions li {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.conditions-label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.conditions-value {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.conditions-meta {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 .chart-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 12px;
+}
+
+.chart-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .chart-header h2 {
@@ -333,9 +383,17 @@ button:disabled {
     height: 220px;
   }
 
+  .conditions {
+    grid-template-columns: 1fr;
+  }
+
   .chart-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .chart-controls {
+    justify-content: flex-start;
   }
 
   .chart-wrap {
