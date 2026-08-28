@@ -11,7 +11,7 @@
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     >
-    <link rel="stylesheet" href="styles.css?v=20260626">
+    <link rel="stylesheet" href="styles.css?v=20260826">
   </head>
   <body>
     <main>
@@ -23,6 +23,19 @@
         <span id="unit">°C</span>
       </div>
 
+      <ul class="conditions" aria-live="polite">
+        <li>
+          <span class="conditions-label">Precipitation</span>
+          <span class="conditions-value" id="precipitation">--</span>
+          <span class="conditions-meta">Last 10 minutes</span>
+        </li>
+        <li>
+          <span class="conditions-label">Wind</span>
+          <span class="conditions-value" id="wind">--</span>
+          <span class="conditions-meta" id="wind-direction">Speed and direction</span>
+        </li>
+      </ul>
+
       <dl>
         <dt>Time</dt>
         <dd id="measured">--</dd>
@@ -31,21 +44,30 @@
       </dl>
 
       <!--<div id="map" aria-label="Station location map"></div>-->
-      <section class="chart-section" aria-label="Temperature curve">
+      <section class="chart-section" aria-label="Weather curve">
         <div class="chart-header">
           <h2 id="chart-title">Past 24 hours</h2>
-          <label>
-            <span>Range</span>
-            <select id="range-select">
-              <option value="1">1 hour</option>
-              <option value="6">6 hours</option>
-              <option value="12">12 hours</option>
-              <option value="24" selected>24 hours</option>
-              <option value="48">48 hours</option>
-              <option value="168">7 days</option>
-              <option value="336">14 days</option>
-            </select>
-          </label>
+          <div class="chart-controls">
+            <label>
+              <span>Metric</span>
+              <select id="metric-select">
+                <option value="temperature" selected>Temperature</option>
+                <option value="precipitation">Precipitation</option>
+              </select>
+            </label>
+            <label>
+              <span>Range</span>
+              <select id="range-select">
+                <option value="1">1 hour</option>
+                <option value="6">6 hours</option>
+                <option value="12">12 hours</option>
+                <option value="24" selected>24 hours</option>
+                <option value="48">48 hours</option>
+                <option value="168">7 days</option>
+                <option value="336">14 days</option>
+              </select>
+            </label>
+          </div>
         </div>
         <div class="chart-wrap">
           <canvas id="temperature-chart"></canvas>
@@ -59,6 +81,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-    <script src="script.js?v=20260626"></script>
+    <script src="script.js?v=20260826"></script>
   </body>
 </html>
