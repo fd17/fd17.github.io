@@ -1,0 +1,9 @@
+# Development tooling for the fd17.github.io static site.
+# Used for optional data-science exploration and validation of the
+# static HTML and the GeoSphere Austria (TAWES) weather data feeds.
+requests==2.33.1
+pandas==3.0.5
+numpy==2.4.4
+beautifulsoup4==4.15.0
+lxml==6.1.2
+html5validator==0.4.2
