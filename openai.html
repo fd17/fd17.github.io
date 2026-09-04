@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>OpenAI Model Lifespans — Signal Deck</title>
+    <meta name="description" content="A visual timeline of OpenAI model launches, lifetimes, and announced shutdowns.">
+    <style>
+      :root {
+        color-scheme: light;
+        --background: #edf3f0;
+        --panel: rgba(255, 255, 255, 0.9);
+        --ink: #10251f;
+        --muted: #60706a;
+        --border: #d4e1dc;
+        --grid: #d9d9d9;
+        --active: #2a9d8f;
+        --shutdown: #d95f59;
+        --created: #264653;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 320px;
+        margin: 0;
+        background:
+          radial-gradient(circle at 8% 8%, rgba(42, 157, 143, 0.2), transparent 32rem),
+          radial-gradient(circle at 92% 18%, rgba(233, 196, 106, 0.2), transparent 28rem),
+          linear-gradient(rgba(255, 255, 255, 0.25) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px),
+          var(--background);
+        background-size: auto, auto, 32px 32px, 32px 32px, auto;
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      main {
+        position: relative;
+        width: min(100%, 1640px);
+        margin: 0 auto;
+        padding: clamp(24px, 4vw, 58px) clamp(12px, 3vw, 36px) 52px;
+      }
+
+      main::before {
+        position: absolute;
+        top: 0;
+        left: clamp(12px, 3vw, 36px);
+        width: 88px;
+        height: 5px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--active), #e9c46a);
+        content: "";
+      }
+
+      header {
+        max-width: 940px;
+        margin-bottom: 30px;
+      }
+
+      .site-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 10px 0 34px;
+        color: var(--muted);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-decoration: none;
+        text-transform: uppercase;
+        transition: color 160ms ease, transform 160ms ease;
+      }
+
+      .site-link::before {
+        color: var(--active);
+        content: "←";
+        font-size: 1rem;
+      }
+
+      .site-link:hover {
+        color: var(--created);
+        transform: translateX(-2px);
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--active);
+        font-size: 0.75rem;
+        font-weight: 750;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.4rem, 6vw, 5.4rem);
+        font-weight: 850;
+        line-height: 0.96;
+        letter-spacing: -0.065em;
+      }
+
+      .intro {
+        max-width: 76ch;
+        margin: 14px 0 0;
+        color: #52605a;
+        font-size: clamp(1rem, 1.6vw, 1.15rem);
+        line-height: 1.6;
+      }
+
+      .chart-frame {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: var(--panel);
+        box-shadow: 0 24px 70px rgba(25, 58, 49, 0.14);
+        backdrop-filter: blur(18px);
+      }
+
+      svg {
+        display: block;
+        background:
+          linear-gradient(180deg, rgba(42, 157, 143, 0.035), transparent 220px),
+          #ffffff;
+        font-family: inherit;
+      }
+
+      .model-label {
+        fill: #29332f;
+        font-size: 11px;
+      }
+
+      .date-label,
+      .today-label {
+        fill: var(--muted);
+        font-size: 11px;
+      }
+
+      .axis-title {
+        fill: #29332f;
+        font-size: 12px;
+      }
+
+      .legend-label {
+        fill: #29332f;
+        font-size: 12px;
+      }
+
+      .grid-line {
+        stroke: var(--grid);
+        stroke-width: 1;
+      }
+
+      .axis-line {
+        stroke: #29332f;
+        stroke-width: 1;
+      }
+
+      .today-line {
+        stroke: var(--muted);
+        stroke-width: 1.2;
+        stroke-dasharray: 5 5;
+      }
+
+      .source-note {
+        margin: 16px 4px 0;
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.55;
+      }
+
+      .source-note a {
+        color: var(--created);
+      }
+
+      .no-script {
+        padding: 24px;
+        color: var(--shutdown);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">Launches · lifetimes · sunsets</p>
+        <h1>OpenAI Model Lifespans</h1>
+        <p class="intro">
+          Each line begins at the model’s creation date. Green extends through the
+          chart horizon when no shutdown is announced; red ends at the announced
+          shutdown date.
+        </p>
+      </header>
+
+      <div class="chart-frame" id="chart-frame">
+        <svg id="timeline" role="img" aria-labelledby="chart-title chart-description"></svg>
+        <noscript>
+          <p class="no-script">JavaScript is required to draw this chart.</p>
+        </noscript>
+      </div>
+
+      <p class="source-note">
+        All models returned by the OpenAI 
+        <a href="https://developers.openai.com/api/reference/resources/models" rel="noreferrer">
+          Models API
+        </a>
+        .
+      </p>
+    </main>
+
+    <script>
+      "use strict";
+
+      const models = [
+        {
+                "id": "text-embedding-ada-002",
+                "created": 1671217299,
+                "shutdown": null
+        },
+        {
+                "id": "whisper-1",
+                "created": 1677532384,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-3.5-turbo",
+                "created": 1677610602,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "tts-1",
+                "created": 1681940951,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-3.5-turbo-16k",
+                "created": 1683758102,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4-0613",
+                "created": 1686588896,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "gpt-4",
+                "created": 1687882411,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "davinci-002",
+                "created": 1692634301,
+                "shutdown": "2026-09-28"
+        },
+        {
+                "id": "babbage-002",
+                "created": 1692634615,
+                "shutdown": "2026-09-28"
+        },
+        {
+                "id": "gpt-3.5-turbo-instruct",
+                "created": 1692901427,
+                "shutdown": "2026-09-28"
+        },
+        {
+                "id": "gpt-3.5-turbo-instruct-0914",
+                "created": 1694122472,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-3.5-turbo-1106",
+                "created": 1698959748,
+                "shutdown": "2026-09-28"
+        },
+        {
+                "id": "tts-1-hd",
+                "created": 1699046015,
+                "shutdown": null
+        },
+        {
+                "id": "tts-1-1106",
+                "created": 1699053241,
+                "shutdown": null
+        },
+        {
+                "id": "tts-1-hd-1106",
+                "created": 1699053533,
+                "shutdown": null
+        },
+        {
+                "id": "text-embedding-3-small",
+                "created": 1705948997,
+                "shutdown": null
+        },
+        {
+                "id": "text-embedding-3-large",
+                "created": 1705953180,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-3.5-turbo-0125",
+                "created": 1706048358,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "gpt-4-turbo",
+                "created": 1712361441,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "gpt-4-turbo-2024-04-09",
+                "created": 1712601677,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "gpt-4o",
+                "created": 1715367049,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4o-2024-05-13",
+                "created": 1715368132,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "gpt-4o-mini-2024-07-18",
+                "created": 1721172717,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4o-mini",
+                "created": 1721172741,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4o-2024-08-06",
+                "created": 1722814719,
+                "shutdown": null
+        },
+        {
+                "id": "omni-moderation-2024-09-26",
+                "created": 1732734466,
+                "shutdown": null
+        },
+        {
+                "id": "o1-2024-12-17",
+                "created": 1734326976,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "o1",
+                "created": 1734375816,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "computer-use-preview",
+                "created": 1734655677,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "o3-mini",
+                "created": 1737146383,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "o3-mini-2025-01-31",
+                "created": 1738010200,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "gpt-4o-2024-11-20",
+                "created": 1739331543,
+                "shutdown": null
+        },
+        {
+                "id": "computer-use-preview-2025-03-11",
+                "created": 1741377021,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-4o-mini-search-preview-2025-03-11",
+                "created": 1741390858,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-4o-mini-search-preview",
+                "created": 1741391161,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4o-transcribe",
+                "created": 1742068463,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4o-mini-transcribe",
+                "created": 1742068596,
+                "shutdown": null
+        },
+        {
+                "id": "o1-pro-2025-03-19",
+                "created": 1742251504,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "o1-pro",
+                "created": 1742251791,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "gpt-4o-mini-tts",
+                "created": 1742403959,
+                "shutdown": null
+        },
+        {
+                "id": "o3-2025-04-16",
+                "created": 1744133301,
+                "shutdown": "2026-12-11"
+        },
+        {
+                "id": "o4-mini-2025-04-16",
+                "created": 1744133506,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "o3",
+                "created": 1744225308,
+                "shutdown": null
+        },
+        {
+                "id": "o4-mini",
+                "created": 1744225351,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "gpt-4.1-2025-04-14",
+                "created": 1744315746,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4.1",
+                "created": 1744316542,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4.1-mini-2025-04-14",
+                "created": 1744317547,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4.1-mini",
+                "created": 1744318173,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4.1-nano-2025-04-14",
+                "created": 1744321025,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "gpt-4.1-nano",
+                "created": 1744321707,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "gpt-image-1",
+                "created": 1745517030,
+                "shutdown": "2026-10-23"
+        },
+        {
+                "id": "o3-pro",
+                "created": 1748475349,
+                "shutdown": null
+        },
+        {
+                "id": "o3-pro-2025-06-10",
+                "created": 1749166761,
+                "shutdown": "2026-12-11"
+        },
+        {
+                "id": "o4-mini-deep-research",
+                "created": 1749685485,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "o3-deep-research",
+                "created": 1749840121,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-4o-transcribe-diarize",
+                "created": 1750798887,
+                "shutdown": null
+        },
+        {
+                "id": "o3-deep-research-2025-06-26",
+                "created": 1750865219,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "o4-mini-deep-research-2025-06-26",
+                "created": 1750866121,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-5-chat-latest",
+                "created": 1754073306,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-5-2025-08-07",
+                "created": 1754075360,
+                "shutdown": "2026-12-11"
+        },
+        {
+                "id": "gpt-5",
+                "created": 1754425777,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5-mini-2025-08-07",
+                "created": 1754425867,
+                "shutdown": "2026-12-11"
+        },
+        {
+                "id": "gpt-5-mini",
+                "created": 1754425928,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5-nano-2025-08-07",
+                "created": 1754426303,
+                "shutdown": "2026-12-11"
+        },
+        {
+                "id": "gpt-5-nano",
+                "created": 1754426384,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-audio-2025-08-28",
+                "created": 1756256146,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-realtime",
+                "created": 1756271701,
+                "shutdown": "2027-01-20"
+        },
+        {
+                "id": "gpt-realtime-2025-08-28",
+                "created": 1756271773,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-audio",
+                "created": 1756339249,
+                "shutdown": "2027-01-20"
+        },
+        {
+                "id": "gpt-5-codex",
+                "created": 1757527818,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-image-1-mini",
+                "created": 1758845821,
+                "shutdown": "2026-12-01"
+        },
+        {
+                "id": "gpt-5-pro-2025-10-06",
+                "created": 1759469707,
+                "shutdown": "2026-12-11"
+        },
+        {
+                "id": "gpt-5-pro",
+                "created": 1759469822,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-audio-mini",
+                "created": 1759512027,
+                "shutdown": "2027-01-20"
+        },
+        {
+                "id": "gpt-audio-mini-2025-10-06",
+                "created": 1759512137,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-5-search-api",
+                "created": 1759514629,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-realtime-mini",
+                "created": 1759517133,
+                "shutdown": "2027-01-20"
+        },
+        {
+                "id": "sora-2",
+                "created": 1759708615,
+                "shutdown": "2026-09-24"
+        },
+        {
+                "id": "sora-2-pro",
+                "created": 1759708663,
+                "shutdown": "2026-09-24"
+        },
+        {
+                "id": "gpt-5-search-api-2025-10-14",
+                "created": 1760043960,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.1-chat-latest",
+                "created": 1762547951,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-5.1-2025-11-13",
+                "created": 1762800353,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.1",
+                "created": 1762800673,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.1-codex",
+                "created": 1762988221,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-5.1-codex-mini",
+                "created": 1763007109,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-5.1-codex-max",
+                "created": 1763671532,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-image-1.5",
+                "created": 1764030620,
+                "shutdown": "2026-12-01"
+        },
+        {
+                "id": "gpt-5.2-2025-12-11",
+                "created": 1765313028,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.2",
+                "created": 1765313051,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.2-pro-2025-12-11",
+                "created": 1765343959,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.2-pro",
+                "created": 1765343983,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.2-chat-latest",
+                "created": 1765344352,
+                "shutdown": "2026-08-10"
+        },
+        {
+                "id": "gpt-4o-mini-transcribe-2025-12-15",
+                "created": 1765610407,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4o-mini-transcribe-2025-03-20",
+                "created": 1765610545,
+                "shutdown": "2027-01-20"
+        },
+        {
+                "id": "gpt-4o-mini-tts-2025-03-20",
+                "created": 1765610731,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-4o-mini-tts-2025-12-15",
+                "created": 1765610837,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-realtime-mini-2025-12-15",
+                "created": 1765612007,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-audio-mini-2025-12-15",
+                "created": 1765760008,
+                "shutdown": null
+        },
+        {
+                "id": "chatgpt-image-latest",
+                "created": 1765925279,
+                "shutdown": "2026-12-01"
+        },
+        {
+                "id": "gpt-5.2-codex",
+                "created": 1766164985,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-5.3-codex",
+                "created": 1770537915,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-realtime-1.5",
+                "created": 1771461469,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-audio-1.5",
+                "created": 1771550885,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4o-search-preview",
+                "created": 1771905534,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-4o-search-preview-2025-03-11",
+                "created": 1771905621,
+                "shutdown": "2026-07-23"
+        },
+        {
+                "id": "gpt-5.3-chat-latest",
+                "created": 1772236571,
+                "shutdown": "2026-08-10"
+        },
+        {
+                "id": "gpt-5.4-2026-03-05",
+                "created": 1772654062,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.4-pro",
+                "created": 1772659601,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.4-pro-2026-03-05",
+                "created": 1772659657,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.4",
+                "created": 1772691852,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.4-nano-2026-03-17",
+                "created": 1773450837,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.4-nano",
+                "created": 1773450870,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.4-mini-2026-03-17",
+                "created": 1773451076,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.4-mini",
+                "created": 1773451123,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-image-2",
+                "created": 1776399795,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-image-2-2026-04-21",
+                "created": 1776399994,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.5",
+                "created": 1776824847,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.5-2026-04-23",
+                "created": 1776839241,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.5-pro",
+                "created": 1776894349,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.5-pro-2026-04-23",
+                "created": 1776894470,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-realtime-translate",
+                "created": 1777950216,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-realtime-2",
+                "created": 1778006032,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-realtime-whisper",
+                "created": 1778012060,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.6-sol",
+                "created": 1782228018,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.6-terra",
+                "created": 1782228459,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-5.6-luna",
+                "created": 1782228658,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-realtime-2.1",
+                "created": 1782254687,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-realtime-2.1-mini",
+                "created": 1782254706,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-transcribe",
+                "created": 1785168027,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-live-transcribe",
+                "created": 1785168034,
+                "shutdown": null
+        },
+        {
+                "id": "gpt-6-astra",
+                "created": 1788429600,
+                "shutdown": null
+        }
+];
+
+      const colors = {
+        active: "#2a9d8f",
+        shutdown: "#d95f59",
+        created: "#264653"
+      };
+
+      const svg = document.querySelector("#timeline");
+      const frame = document.querySelector("#chart-frame");
+      const namespace = "http://www.w3.org/2000/svg";
+
+      function makeSvgElement(name, attributes = {}, text = "") {
+        const element = document.createElementNS(namespace, name);
+        Object.entries(attributes).forEach(([key, value]) => {
+          element.setAttribute(key, String(value));
+        });
+        if (text) {
+          element.textContent = text;
+        }
+        return element;
+      }
+
+      function utcDateFromUnix(seconds) {
+        const value = new Date(seconds * 1000);
+        return new Date(Date.UTC(
+          value.getUTCFullYear(),
+          value.getUTCMonth(),
+          value.getUTCDate()
+        ));
+      }
+
+      function utcDateFromIso(value) {
+        return value ? new Date(value + "T00:00:00Z") : null;
+      }
+
+      function addUtcMonths(date, count) {
+        return new Date(Date.UTC(
+          date.getUTCFullYear(),
+          date.getUTCMonth() + count,
+          1
+        ));
+      }
+
+      function formatDate(date) {
+        return new Intl.DateTimeFormat("en-GB", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          timeZone: "UTC"
+        }).format(date);
+      }
+
+      function drawLegend(group, left) {
+        const entries = [
+          { x: left, color: colors.active, label: "No shutdown announced" },
+          { x: left + 250, color: colors.shutdown, label: "Shutdown announced", square: true },
+          { x: left + 490, color: colors.created, label: "Created", circle: true }
+        ];
+
+        entries.forEach((entry) => {
+          if (entry.circle) {
+            group.append(makeSvgElement("circle", {
+              cx: entry.x + 6,
+              cy: 29,
+              r: 4,
+              fill: entry.color
+            }));
+          } else {
+            group.append(makeSvgElement("line", {
+              x1: entry.x,
+              x2: entry.x + 28,
+              y1: 29,
+              y2: 29,
+              stroke: entry.color,
+              "stroke-width": 2.4
+            }));
+            if (entry.square) {
+              group.append(makeSvgElement("rect", {
+                x: entry.x + 23,
+                y: 24,
+                width: 10,
+                height: 10,
+                fill: entry.color
+              }));
+            }
+          }
+
+          group.append(makeSvgElement("text", {
+            x: entry.x + 38,
+            y: 33,
+            class: "legend-label"
+          }, entry.label));
+        });
+      }
+
+      function drawChart() {
+        const sortedModels = models
+          .map((model) => ({
+            ...model,
+            createdDate: utcDateFromUnix(model.created),
+            shutdownDate: utcDateFromIso(model.shutdown)
+          }))
+          .sort((a, b) =>
+            a.createdDate - b.createdDate || a.id.localeCompare(b.id)
+          );
+
+        const todayValue = new Date();
+        const today = new Date(Date.UTC(
+          todayValue.getUTCFullYear(),
+          todayValue.getUTCMonth(),
+          todayValue.getUTCDate()
+        ));
+        const shutdownDates = sortedModels
+          .map((model) => model.shutdownDate)
+          .filter(Boolean);
+        const earliest = sortedModels[0].createdDate;
+        const latest = new Date(Math.max(today, ...shutdownDates));
+        const plotStart = new Date(earliest.getTime() - 30 * 86400000);
+        const plotEnd = new Date(latest.getTime() + 90 * 86400000);
+
+        const width = Math.max(1180, Math.min(1560, frame.clientWidth - 2));
+        const left = 420;
+        const right = 42;
+        const top = 82;
+        const rowHeight = 30;
+        const bottom = 82;
+        const axisY = top + sortedModels.length * rowHeight;
+        const topAxisY = top - 8;
+        const height = axisY + bottom;
+        const plotWidth = width - left - right;
+        const duration = plotEnd - plotStart;
+        const x = (date) => left + ((date - plotStart) / duration) * plotWidth;
+
+        svg.replaceChildren();
+        svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+        svg.setAttribute("width", width);
+        svg.setAttribute("height", height);
+
+        svg.append(makeSvgElement("title", { id: "chart-title" },
+          "OpenAI model availability timeline"));
+        svg.append(makeSvgElement("desc", { id: "chart-description" },
+          "A horizontal timeline for " + sortedModels.length +
+          " models. Circles show creation dates and squares show announced shutdown dates."));
+
+        const legend = makeSvgElement("g", { "aria-label": "Legend" });
+        drawLegend(legend, left);
+        svg.append(legend);
+
+        svg.append(makeSvgElement("line", {
+          x1: left,
+          x2: width - right,
+          y1: topAxisY,
+          y2: topAxisY,
+          class: "axis-line"
+        }));
+
+        let tick = new Date(Date.UTC(
+          plotStart.getUTCFullYear(),
+          plotStart.getUTCMonth() < 6 ? 0 : 6,
+          1
+        ));
+        if (tick < plotStart) {
+          tick = addUtcMonths(tick, 6);
+        }
+
+        while (tick <= plotEnd) {
+          const tickX = x(tick);
+          svg.append(makeSvgElement("line", {
+            x1: tickX,
+            x2: tickX,
+            y1: topAxisY,
+            y2: axisY,
+            class: "grid-line"
+          }));
+          svg.append(makeSvgElement("line", {
+            x1: tickX,
+            x2: tickX,
+            y1: topAxisY - 5,
+            y2: topAxisY,
+            class: "axis-line"
+          }));
+          svg.append(makeSvgElement("text", {
+            x: tickX,
+            y: topAxisY - 10,
+            "text-anchor": "middle",
+            class: "date-label"
+          }, tick.toLocaleDateString("en-GB", {
+            month: "short",
+            year: "numeric",
+            timeZone: "UTC"
+          })));
+          svg.append(makeSvgElement("line", {
+            x1: tickX,
+            x2: tickX,
+            y1: axisY,
+            y2: axisY + 5,
+            class: "axis-line"
+          }));
+          svg.append(makeSvgElement("text", {
+            x: tickX,
+            y: axisY + 22,
+            "text-anchor": "middle",
+            class: "date-label"
+          }, tick.toLocaleDateString("en-GB", {
+            month: "short",
+            year: "numeric",
+            timeZone: "UTC"
+          })));
+          tick = addUtcMonths(tick, 6);
+        }
+
+        svg.append(makeSvgElement("line", {
+          x1: left,
+          x2: width - right,
+          y1: axisY,
+          y2: axisY,
+          class: "axis-line"
+        }));
+        svg.append(makeSvgElement("text", {
+          x: left + plotWidth / 2,
+          y: axisY + 55,
+          "text-anchor": "middle",
+          class: "axis-title"
+        }, ""));
+
+        const todayX = x(today);
+        svg.append(makeSvgElement("line", {
+          x1: todayX,
+          x2: todayX,
+          y1: topAxisY,
+          y2: axisY,
+          class: "today-line"
+        }));
+        svg.append(makeSvgElement("text", {
+          x: todayX,
+          y: top + 8,
+          "text-anchor": "middle",
+          class: "today-label"
+        }, "today"));
+
+        sortedModels.forEach((model, index) => {
+          const y = top + index * rowHeight + rowHeight / 2;
+          const hasShutdown = Boolean(model.shutdownDate);
+          const endDate = model.shutdownDate || plotEnd;
+          const lineColor = hasShutdown ? colors.shutdown : colors.active;
+          const group = makeSvgElement("g");
+
+          group.append(makeSvgElement("title", {},
+            model.id + ": released " + formatDate(model.createdDate) +
+            (hasShutdown
+              ? "; shutdown " + formatDate(model.shutdownDate)
+              : "; no shutdown announced")));
+
+          group.append(makeSvgElement("rect", {
+            x: 0,
+            y: y - rowHeight / 2,
+            width,
+            height: rowHeight,
+            fill: "transparent"
+          }));
+          group.append(makeSvgElement("text", {
+            x: left - 13,
+            y: y + 4,
+            "text-anchor": "end",
+            class: "model-label"
+          }, model.id));
+          group.append(makeSvgElement("line", {
+            x1: x(model.createdDate),
+            x2: x(endDate),
+            y1: y,
+            y2: y,
+            stroke: lineColor,
+            "stroke-width": 2.4
+          }));
+          group.append(makeSvgElement("circle", {
+            cx: x(model.createdDate),
+            cy: y,
+            r: 4,
+            fill: colors.created
+          }));
+
+          if (hasShutdown) {
+            group.append(makeSvgElement("rect", {
+              x: x(model.shutdownDate) - 4.5,
+              y: y - 4.5,
+              width: 9,
+              height: 9,
+              fill: colors.shutdown
+            }));
+          }
+
+          svg.append(group);
+        });
+      }
+
+      drawChart();
+
+      let resizeTimer;
+      window.addEventListener("resize", () => {
+        window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(drawChart, 120);
+      });
+    </script>
+  </body>
+</html>
