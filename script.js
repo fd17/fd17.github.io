@@ -48,9 +48,9 @@ let precipitationSeries = [];
 
 stationEl.textContent = `Station ${stationId}`;
 
-L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+L.tileLayer("https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=cb1_2wou_1_997f234a889b361eb141744b", {
   attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
-  maxZoom: 19,
+  maxZoom: 20,
 }).addTo(stationMap);
 
 function buildApiUrl() {

@@ -6,16 +6,78 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>fd17.github.io</title>
+    <title>Signal Deck — live data at a glance</title>
+    <meta name="description" content="A compact collection of live weather, infrastructure, and technology views.">
+    <link rel="stylesheet" href="styles.css?v=20260904">
   </head>
-  <body>
-    <main>
-      <h1>fd17.github.io</h1>
-      <p><a href="temperatur.html?station_id=11320&v=20260826">Uni</a></p>
-      <p><a href="temperatur.html?station_id=11121&v=20260826">Flughafen</a></p>
-      <p><a href="temperatur.html?station_id=11126&v=20260826">Patscherkofel</a></p>
-      <p><a href="hottestplace.html?v=20260626">Hottest Place</a></p>
-      <p><a href="fibermap.html?v=20260626">Fiber Map</a></p>
+  <body class="home-page">
+    <main class="home-shell">
+      <p class="home-kicker">Live data · simply seen</p>
+      <h1 class="home-title">Signal Deck</h1>
+      <p class="home-intro">
+        A pocket observatory for weather, infrastructure, and the technology
+        moving around us.
+      </p>
+
+      <p class="section-label">Choose a view</p>
+      <nav aria-label="Data views">
+        <ul class="link-grid">
+          <li>
+            <a class="link-card" href="temperatur.html?station_id=11320&v=20260904">
+              <span class="card-icon" aria-hidden="true">◌</span>
+              <span>
+                <span class="card-title">University weather</span>
+                <span class="card-copy">Live conditions from the Innsbruck university station.</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="link-card" href="temperatur.html?station_id=11121&v=20260904">
+              <span class="card-icon" aria-hidden="true">✦</span>
+              <span>
+                <span class="card-title">Airport weather</span>
+                <span class="card-copy">Temperature, rain, and wind from Innsbruck Airport.</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="link-card" href="temperatur.html?station_id=11126&v=20260904">
+              <span class="card-icon" aria-hidden="true">△</span>
+              <span>
+                <span class="card-title">Patscherkofel</span>
+                <span class="card-copy">A mountain-weather view high above the valley.</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="link-card" href="hottestplace.html?v=20260904">
+              <span class="card-icon" aria-hidden="true">☀</span>
+              <span>
+                <span class="card-title">Heat seeker</span>
+                <span class="card-copy">Find Austria’s hottest reporting station right now.</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="link-card" href="fibermap.html?v=20260904">
+              <span class="card-icon" aria-hidden="true">⌁</span>
+              <span>
+                <span class="card-title">Fiber pulse</span>
+                <span class="card-copy">Explore local fiber availability street by street.</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="link-card featured" href="openai.html?v=20260904">
+              <span class="card-icon" aria-hidden="true">◎</span>
+              <span>
+                <span class="card-title">OpenAI model lifespans</span>
+                <span class="card-copy">Follow model launches, active lifetimes, and announced sunsets.</span>
+              </span>
+            </a>
+          </li>
+        </ul>
+      </nav>
     </main>
   </body>
 </html>
